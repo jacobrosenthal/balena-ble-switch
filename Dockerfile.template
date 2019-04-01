@@ -1,0 +1,80 @@
+################################################################################
+# Base image
+################################################################################
+
+FROM balenalib/%%RESIN_MACHINE_NAME%% as base
+
+ENV INITSYSTEM=on
+ENV DEBIAN_FRONTEND=noninteractive
+
+################################################################################
+# Rust image
+################################################################################
+
+FROM base as rust
+
+# Install build tools
+RUN apt-get -q update && apt-get install -yq --no-install-recommends build-essential curl file \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+# Install rustup downloading the version specified by the standard rust-toolchain file
+COPY rust-toolchain .
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain `cat rust-toolchain`
+
+################################################################################
+# Dependencies
+################################################################################
+
+FROM rust as dependencies
+
+# Install build tools
+RUN apt-get -q update && apt-get install -yq --no-install-recommends \
+	libudev-dev libdbus-glib-1-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Create new fake project ($USER is needed by `cargo new`)
+RUN USER=root cargo new app
+
+WORKDIR /build/app
+
+# Copy real app dependencies
+COPY Cargo.* ./
+
+# Copy the file specifying the Rust version to use
+COPY rust-toolchain ./
+
+# Build fake project with real dependencies
+RUN cargo build --release
+
+# Remove the fake app build artifacts, the second one is dashes turn to underscores!
+RUN rm -rf target/release/gym* target/release/deps/gym-*
+
+# Copy everything, not just source code
+COPY . .
+
+# Build real app
+RUN cargo build --release
+
+################################################################################
+# Final image
+################################################################################
+
+FROM base
+
+# Install build tools
+RUN apt-get -q update && apt-get install -yq --no-install-recommends \
+	libdbus-1-3 bluez  \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+# Copy binary from builder image
+COPY --from=dependencies /build/app/target/release/gym .
+
+COPY start.sh .
+
+CMD ["bash", "start.sh"]

@@ -1,0 +1,23 @@
+[package]
+name = "gym"
+version = "0.1.0"
+authors = ["Jacob Rosenthal <jacobrosenthal@gmail.com>"]
+publish = false
+edition = "2018"
+
+[dependencies]
+bluster = "0.1.2"
+crossbeam = "0.6.0"
+futures = "0.1.25"
+keycode = "0.1.1"
+nix = "0.13.0"
+systemstat = "0.1.3"
+tokio = "0.1.14"
+udev = "0.2.0"
+uuid = "0.7.1"
+rppal = "0.11.1"
+futures-timer = "0.1"
+
+[[bin]]
+name = "gym"
+path = "src/main.rs"
