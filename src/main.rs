@@ -7,11 +7,16 @@ use std::sync::{Arc, Mutex};
 use tokio::runtime::current_thread::Runtime;
 use futures_timer::FutureExt;
 use std::time::Duration;
+use std::{thread, time};
 
 const ADVERTISING_NAME: &str = "walk don't walk";
 
 fn main() {
-    println!("starting up");
+    println!("delay start up");
+
+    thread::sleep(Duration::new(5, 0));
+
+    println!("starting up again");
 
     let runtime = Arc::new(Mutex::new(Runtime::new().unwrap()));
 
