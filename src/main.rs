@@ -30,18 +30,24 @@ fn main() {
                 println!("Peripheral powered on");
                 Ok(future::Loop::Break(peripheral))
             } else {
+                println!("Peripheral off");
                 Ok(future::Loop::Continue(peripheral))
+
             }
         })
     })
     .timeout(Duration::from_secs(3))
     .and_then(|peripheral| {
+        println!("start advertising");
+
         let peripheral2 = Arc::clone(&peripheral);
         peripheral
             .start_advertising(ADVERTISING_NAME, &[])
             .and_then(move |advertising_stream| Ok((advertising_stream, peripheral2)))
     })
     .and_then(|(advertising_stream, peripheral)| {
+        println!("check advertising advertising");
+
         let handled_advertising_stream = advertising_stream.for_each(|_| Ok(()));
 
         let advertising_check = future::loop_fn(Arc::clone(&peripheral), move |peripheral| {
@@ -50,6 +56,7 @@ fn main() {
                     println!("Peripheral started advertising \"{}\"", ADVERTISING_NAME);
                     Ok(future::Loop::Break(peripheral))
                 } else {
+                    println!("not advertising");
                     Ok(future::Loop::Continue(peripheral))
                 }
             })
